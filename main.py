@@ -3,6 +3,7 @@ import sys
 import cv2
 import time
 import tempfile
+import threading
 import pyperclip
 import pytesseract
 import numpy as np
@@ -13,6 +14,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+from ecr_demo import h_lrc, ecrDemo
 
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe'
@@ -188,7 +190,6 @@ class Snipper(QtWidgets.QWidget):
 
 
 
-
 class CaptureWindow(QtWidgets.QMainWindow, Capture_MainWindowUI):
 
     switch_window = QtCore.pyqtSignal()
@@ -204,12 +205,14 @@ class CaptureWindow(QtWidgets.QMainWindow, Capture_MainWindowUI):
 
 
 class PayWindow(QtWidgets.QMainWindow, Pay_MainWindowUI):
+    myEcrDemo = ecrDemo("127.0.0.1", 10009)
+    # switch_window = QtCore.pyqtSignal()
 
-    switch_window = QtCore.pyqtSignal()
-
-    def __init__(self):
+    def __init__(self, app):
+        self.app = app
         self.bbox = ()
         self.value = 0
+        self.amount = 0
         QtWidgets.QMainWindow.__init__(self)
         self.setupUi(self)
 
@@ -234,13 +237,53 @@ class PayWindow(QtWidgets.QMainWindow, Pay_MainWindowUI):
         text = pytesseract.image_to_string(gray, config=tessdata_dir_config)
         print("bbox value::", self.bbox)
         self.payAmount.setText(text)
+        self.amount = text
         self.update()
-
         self.show()
 
     def paybutton_handler(self):
         self.update_pay_value()
+
+        # try:
+
+        amount = self.amount
+
+        # print("amount in paybutton_handler::", amount, type(amount))
+
+        ##init
+        #self.myEcrDemo.processCommand(1)
+        ##credit sale
+        #self.myEcrDemo.processCommand(2)
+        ##credit adjust tip
+        # self.myEcrDemo.processCommand(3)
+        # ##debit sale
+        # self.myEcrDemo.response_signal.connect(self.update_status)
+        self.myEcrDemo.processCommand(4, amount, self, self.app)
+        # res = self.myEcrDemo.processCommand(4, amount, self, self.app)
+
+        # time.sleep()
+        # print("res in paybutton_handler::", res)
+        # ##ebt sale
+        # self.myEcrDemo.processCommand(5)
+        # ##gift redeem
+        # self.myEcrDemo.processCommand(6)
+        # except TypeError:
+
+        # self.viewStatus.setText(res.decode()[len("\x020\x1cT03\x1c1.44\x1c100001\x1c"):-len("\x03 ")])
+        # self.update()
+        # self.show()
+
+        # thread = ecrDemo(self)
+        # thread.status_signal.connect(self.update_status)
+        # thread.start()
+
+
+    def update_status(self, res):
+        self.viewStatus.setText(res)
+        self.update()
+        self.show()
         
+
 
 class Controller:
 
@@ -248,7 +291,7 @@ class Controller:
         self.app = app
         self.capture_window = CaptureWindow()
         self.snipper = Snipper(self.app)
-        self.pay_window = PayWindow()
+        self.pay_window = PayWindow(self.app)
 
     def show_capture_window(self):
         
@@ -347,7 +390,11 @@ if __name__ == '__main__':
     app.setQuitOnLastWindowClosed(False)
 
     # Create the icon
-    icon = QIcon("icon.png")
+    if getattr(sys, 'frozen', False):
+        icon = QIcon(os.path.join(sys._MEIPASS, "files\\icon.png"))
+    else:
+        icon = QIcon("files\\icon.png")
+    
 
     # Create the tray
     tray = QSystemTrayIcon()

@@ -23,7 +23,7 @@ tessdata_dir_config = '--tessdata-dir "C:\\Program Files (x86)\\Tesseract-OCR\\t
 
 class Capture_MainWindowUI(object):
     def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
+        MainWindow.setObjectName("ScreenCapture")
         # MainWindow.resize(509, 234)
         MainWindow.resize(255, 117)
         self.centralWidget = QtWidgets.QWidget(MainWindow)
@@ -49,13 +49,13 @@ class Capture_MainWindowUI(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "ScreenCapture"))
         self.pushButton.setText(_translate("MainWindow", "Capture"))
 
 
 class Pay_MainWindowUI(object):
     def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
+        MainWindow.setObjectName("ScreenCapture")
         # MainWindow.resize(623, 273)
         MainWindow.resize(400, 100)
         MainWindow.setMaximumSize(QtCore.QSize(623, 16777215))
@@ -103,7 +103,7 @@ class Pay_MainWindowUI(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "ScreenCapture"))
         self.payButton.setText(_translate("MainWindow", "Pay"))
         self.labelStatus.setText(_translate("MainWindow", "Status"))
 
@@ -165,6 +165,8 @@ class Snipper(QtWidgets.QWidget):
 
         img = ImageGrab.grab(bbox=(x1, y1, x2, y2))
         text, img = self.read_image(np.array(img))
+        text = text.replace(".","")
+        text = text.replace(",","")
         self.snipped_value = text
         # pyperclip.copy(text)
         print("Snipped Value:::", text)
@@ -236,6 +238,11 @@ class PayWindow(QtWidgets.QMainWindow, Pay_MainWindowUI):
         gray = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2GRAY)
         text = pytesseract.image_to_string(gray, config=tessdata_dir_config)
         print("bbox value::", self.bbox)
+
+        text = text.replace(".","")
+        text = text.replace(",","")
+
+
         self.payAmount.setText(text)
         self.amount = text
         self.update()

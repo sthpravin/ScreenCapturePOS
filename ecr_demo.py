@@ -214,12 +214,16 @@ class ecrDemo(QtCore.QThread):
             
         except socket.timeout:
             pass
+        except ConnectionRefusedError:
+            self.status_signal.emit("Connection Error")
         finally:
             # close socket
-            connstream.shutdown(socket.SHUT_RDWR)
-            connstream.close()
-
-            self.status_signal.emit(response)
+            try:
+                connstream.shutdown(socket.SHUT_RDWR)
+                connstream.close()
+                self.status_signal.emit(response)
+            except OSError:
+                self.status_signal.emit("Connection Error")
 
     #pack message
     def pack_message(self, s_part):

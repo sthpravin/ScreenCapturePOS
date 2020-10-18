@@ -37,21 +37,25 @@ class ecrDemo(QtCore.QThread):
     response_signal = QtCore.pyqtSignal(str)
     status_signal = QtCore.pyqtSignal(str)
     #init
-    def __init__(self, posURL, posPort):
+    def __init__(self):
         super().__init__()
-
         self.ecrVersion = "1.30"
         self.STX = "[02]"
         self.ETX = "[03]"
         self.FS = "[1c]"
         self.US = "[1f]"
         
-        self.posurl = posURL
-        self.posport = posPort
+        self.posurl = ""
+        self.posport = ""
         self.response = ""
+        self.amount = 0
+        self.CommandIdex = 4
 
-    def processCommand(self, CommandIdex, amount, pay_window, app):
+    def run(self):
         req = ''
+        CommandIdex = self.CommandIdex
+        amount = self.amount
+        print("amt in run:::", amount)
         if(CommandIdex == 1):
             req = self.pack_message(self.pack_initCommand())
         elif(CommandIdex == 2):
@@ -70,10 +74,10 @@ class ecrDemo(QtCore.QThread):
             pass
 
         if(req):
-            return self.sendMessagetopos(req.encode(), pay_window, app)
+            self.sendMessagetopos(req.encode())
 
-            # thread = threading.Thread(target=self.sendMessagetopos(req.encode(), pay_window))
-            # thread.start()
+        # terminate the thread
+        # self.exit()
 
     def pack_initCommand(self):
         return "A00" + self.FS + self.ecrVersion
@@ -140,8 +144,9 @@ class ecrDemo(QtCore.QThread):
     #ecr <--- response message <--- pos terminal
     #ecr ---> ACK              ---> pos terminal
     #ecr <--- EOT              <--- pos terminal
-    def sendMessagetopos(self, message, pay_window, app):
+    def sendMessagetopos(self, message):
         data = ''
+        response = ""
         #resend times
         t_resend = 0
         try:
@@ -155,15 +160,12 @@ class ecrDemo(QtCore.QThread):
             stage_value += 1
 
             while True:
+                self.status_signal.emit("Processing!!!")
+
                 #wait to receive
                 data = connstream.recv(1024) # receive line from server: up to 1k
                 print('===>Receive: ',data) # bytes are quoted, was `x`, repr(x)
-                # self.response = data
-                # if type(data) is str:
-                #     self.response_signal.emit(data)
-
-                # app.processEvents()
-                # pay_window.update()
+                
                 if t_resend > 3:
                     break
                 
@@ -174,7 +176,7 @@ class ecrDemo(QtCore.QThread):
                     else:
                         connstream.send(message)
                         t_resend += 1
-                    self.status_signal.emit("Processing!!!")
+                    
                 #wait response, and send ack to pos terminal
                 elif stage_value == 2:
                     if data[:1] == b"\x02":
@@ -182,18 +184,19 @@ class ecrDemo(QtCore.QThread):
                         connstream.send(b'\x06')
                         print('Send===>: ',r'b\x06')
                         print("true ::", data, type(data))
-                        # self.response = data
-                        # #emit response
-                        # if type(data) is str:
-
-                        #     self.response_signal.emit(data)
-                        self.status_signal.emit("Processing!!!")
+                        res = data.decode()
+                        print("res:::", res)
+                        sp = len("\x020\x1cT03\x1c1.44\x1c100001\x1c")
+                        res = res[sp:]
+                        ep = res.index("\x03")
+                        response = res[:ep]
+                        print("response:::", response)
                     else:
                         #send NAK
                         connstream.send(b'\x15')
                         print('Send===>: ',r'b\x15')
                         t_resend += 1
-                        self.status_signal.emit("Processing!!!")
+                        
 
                 #wait EOT
                 elif stage_value == 3:
@@ -204,7 +207,7 @@ class ecrDemo(QtCore.QThread):
                         connstream.send(b'\x06')
                         print('Send===>: ',r'b\x06')
                         t_resend += 1
-                    self.status_signal.emit("Processing!!!")
+                    
                 else:
                     pass
                 
@@ -215,7 +218,9 @@ class ecrDemo(QtCore.QThread):
             # close socket
             connstream.shutdown(socket.SHUT_RDWR)
             connstream.close()
-        return self.response
+
+            self.status_signal.emit(response)
+        # return self.response
 
     #pack message
     def pack_message(self, s_part):
@@ -258,3 +263,8 @@ if __name__ == "__main__":
 
 # 192.168.20.252 , 9013
 # st.1directconnect.com ,  443
+
+
+# '\x020\x1cT03\x1c1.44\x1c100001\x1cTIMEOUT\x03 '
+# '\x020\x1cT03\x1c1.44\x1c100003\x1cAMOUNT INVALID\x03\x04'
+# '\x020\x1cT03\x1c1.44\x1c100019\x1cTRACK INVALID\x03L'

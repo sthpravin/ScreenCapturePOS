@@ -205,7 +205,7 @@ class CaptureWindow(QtWidgets.QMainWindow, Capture_MainWindowUI):
 
 
 class PayWindow(QtWidgets.QMainWindow, Pay_MainWindowUI):
-    myEcrDemo = ecrDemo("127.0.0.1", 10009)
+    
     # switch_window = QtCore.pyqtSignal()
 
     def __init__(self, app):
@@ -257,33 +257,27 @@ class PayWindow(QtWidgets.QMainWindow, Pay_MainWindowUI):
         ##credit adjust tip
         # self.myEcrDemo.processCommand(3)
         # ##debit sale
-        # self.myEcrDemo.response_signal.connect(self.update_status)
-        self.myEcrDemo.processCommand(4, amount, self, self.app)
-        # res = self.myEcrDemo.processCommand(4, amount, self, self.app)
-
-        # time.sleep()
-        # print("res in paybutton_handler::", res)
+        # res = self.myEcrDemo.processCommand(4)
         # ##ebt sale
         # self.myEcrDemo.processCommand(5)
         # ##gift redeem
         # self.myEcrDemo.processCommand(6)
-        # except TypeError:
 
-        # self.viewStatus.setText(res.decode()[len("\x020\x1cT03\x1c1.44\x1c100001\x1c"):-len("\x03 ")])
-        # self.update()
-        # self.show()
-
-        # thread = ecrDemo(self)
-        # thread.status_signal.connect(self.update_status)
-        # thread.start()
+        # Execute payment by starting a new thread
+        self.thread = ecrDemo()
+        self.thread.posurl = "127.0.0.1"
+        self.thread.posport = 10009
+        self.thread.amount = self.amount
+        self.thread.status_signal.connect(self.update_status)
+        self.thread.start()
+        self.thread.exit()
 
 
     def update_status(self, res):
         self.viewStatus.setText(res)
-        self.update()
-        self.show()
+        # self.update()
+        # self.show()
         
-
 
 class Controller:
 

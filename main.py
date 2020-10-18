@@ -243,34 +243,18 @@ class PayWindow(QtWidgets.QMainWindow, Pay_MainWindowUI):
 
     def paybutton_handler(self):
         self.update_pay_value()
-
-        # try:
-
         amount = self.amount
-
-        # print("amount in paybutton_handler::", amount, type(amount))
-
-        ##init
-        #self.myEcrDemo.processCommand(1)
-        ##credit sale
-        #self.myEcrDemo.processCommand(2)
-        ##credit adjust tip
-        # self.myEcrDemo.processCommand(3)
-        # ##debit sale
-        # res = self.myEcrDemo.processCommand(4)
-        # ##ebt sale
-        # self.myEcrDemo.processCommand(5)
-        # ##gift redeem
-        # self.myEcrDemo.processCommand(6)
-
-        # Execute payment by starting a new thread
-        self.thread = ecrDemo()
-        self.thread.posurl = "127.0.0.1"
-        self.thread.posport = 10009
-        self.thread.amount = self.amount
-        self.thread.status_signal.connect(self.update_status)
-        self.thread.start()
-        self.thread.exit()
+        if amount == "":
+            self.update_status("AMOUNT INVALID")
+        else:
+            # Execute payment by starting a new thread
+            self.thread = ecrDemo()
+            self.thread.posurl = "127.0.0.1"
+            self.thread.posport = 10009
+            self.thread.amount = self.amount
+            self.thread.status_signal.connect(self.update_status)
+            self.thread.start()
+            self.thread.exit()
 
 
     def update_status(self, res):

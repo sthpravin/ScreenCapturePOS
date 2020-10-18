@@ -220,7 +220,6 @@ class ecrDemo(QtCore.QThread):
             connstream.close()
 
             self.status_signal.emit(response)
-        # return self.response
 
     #pack message
     def pack_message(self, s_part):
